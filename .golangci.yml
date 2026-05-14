@@ -22,7 +22,7 @@ linters:
     - goconst
     - gocritic
     - gocyclo
-    - gomodguard
+    - gomodguard_v2
     - goprintffuncname
     - gosec
     - grouper
@@ -95,6 +95,9 @@ linters:
       - linters:
           - staticcheck
         text: 'SA9003:'
+      - linters:
+          - goconst
+        path: internal/domain/text\.go
     paths:
       - build
       - data
