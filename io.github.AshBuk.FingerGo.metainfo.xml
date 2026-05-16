@@ -67,6 +67,11 @@
   </keywords>
   
   <releases>
+    <release version="1.2.7" date="2026-05-17">
+      <description>
+        <p>Internal improvements</p>
+      </description>
+    </release>
     <release version="1.2.6" date="2026-04-18">
       <description>
         <p>Security dependency bumps</p>
