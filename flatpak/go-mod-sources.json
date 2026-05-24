@@ -15,17 +15,31 @@
   },
   {
     "type": "file",
-    "url": "https://proxy.golang.org/github.com/wailsapp/wails/v2/@v/v2.11.0.zip",
-    "sha256": "1f599fcbff21b1d46c8a2c20f7da6cdf0913d616ac9f0fbdae07ce2e0cb9e877",
+    "url": "https://proxy.golang.org/github.com/wailsapp/wails/v2/@v/v2.12.0.zip",
+    "sha256": "180adf48c80ff08a23a30964fd69f6fe205d7915e5903237b46236f605c0dfd6",
     "dest": "go/pkg/mod/cache/download/github.com/wailsapp/wails/v2/@v/",
-    "dest-filename": "v2.11.0.zip"
+    "dest-filename": "v2.12.0.zip"
   },
   {
     "type": "file",
-    "url": "https://proxy.golang.org/github.com/wailsapp/wails/v2/@v/v2.11.0.mod",
-    "sha256": "b9439ff9cf022a21d80401bb923203072761a21dafccc4ae0b62b2304e083885",
+    "url": "https://proxy.golang.org/github.com/wailsapp/wails/v2/@v/v2.12.0.mod",
+    "sha256": "6c811e3ecc96eabc11b95e7f53cf0e99ff7671b1dedaa93387aebce71b0407b9",
     "dest": "go/pkg/mod/cache/download/github.com/wailsapp/wails/v2/@v/",
-    "dest-filename": "v2.11.0.mod"
+    "dest-filename": "v2.12.0.mod"
+  },
+  {
+    "type": "file",
+    "url": "https://proxy.golang.org/git.sr.ht/~jackmordaunt/go-toast/v2/@v/v2.0.3.zip",
+    "sha256": "9bb5ce85169e70d3fd58934f471c41ec8d63968e241050fb59a96035f065245f",
+    "dest": "go/pkg/mod/cache/download/git.sr.ht/~jackmordaunt/go-toast/v2/@v/",
+    "dest-filename": "v2.0.3.zip"
+  },
+  {
+    "type": "file",
+    "url": "https://proxy.golang.org/git.sr.ht/~jackmordaunt/go-toast/v2/@v/v2.0.3.mod",
+    "sha256": "23ca0d249b7ec999dbbb4023ed2dc029fa488031a6d512cfd8570141d529308b",
+    "dest": "go/pkg/mod/cache/download/git.sr.ht/~jackmordaunt/go-toast/v2/@v/",
+    "dest-filename": "v2.0.3.mod"
   },
   {
     "type": "file",
