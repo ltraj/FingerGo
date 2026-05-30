@@ -10,6 +10,10 @@
 
     const esc = window.PracticeManager?.esc || (s => String(s ?? ''));
     const PM = () => window.PracticeManager;
+    const DEBUG = false;
+    const log = (...args) => {
+        if (DEBUG) console.log('[TargetedPractice]', ...args);
+    };
 
     const state = {
         selectedGroup: null,
@@ -20,6 +24,8 @@
         customGroups: [],
         editingGroup: null,
         pickerKeys: new Set(),
+        groupCache: new Map(),
+        dataLoaded: false,
     };
 
     function formatKeyLabel(key) {
@@ -27,8 +33,35 @@
         return key;
     }
 
+    function rebuildGroupCache() {
+        state.groupCache.clear();
+        const add = group => {
+            if (!group?.id) return;
+            const source = group.source || 'builtin';
+            state.groupCache.set(`${source}:${group.id}`, { ...group, keys: [...(group.keys || [])] });
+        };
+        PM().getBuiltinGroups().forEach(add);
+        state.customGroups.forEach(g => add({ ...g, source: 'custom' }));
+        if (state.weakKeys.length) {
+            add({
+                id: 'builtin-weak-keys',
+                name: 'Weak keys',
+                keys: state.weakKeys.map(([k]) => k),
+                source: 'suggested',
+            });
+        }
+    }
+
+    function resolveGroupFromCard(card) {
+        const key = `${card.dataset.source}:${card.dataset.groupId}`;
+        return state.groupCache.get(key) || null;
+    }
+
     function renderPreview() {
-        if (!state.selectedGroup?.keys?.length) return '<p class="practice-muted">Select a group to preview.</p>';
+        if (!state.selectedGroup?.keys?.length) {
+            return '<p class="practice-muted">Select a group to preview.</p>';
+        }
+        log('preview', state.selectedGroup.id, state.selectedGroup.keys.length);
         const result = window.ExerciseGenerator?.generateExercise({
             targetKeys: state.selectedGroup.keys,
             length: state.length,
@@ -56,6 +89,7 @@
     async function refreshData() {
         state.weakKeys = await PM().fetchWeakKeys(50);
         state.customGroups = await PM().fetchCustomGroups();
+        rebuildGroupCache();
     }
 
     function renderWeakSection() {
@@ -87,7 +121,7 @@
     function renderEditor() {
         const name = esc(state.editingGroup?.name || '');
         const selected = [...state.pickerKeys].map(k => esc(formatKeyLabel(k))).join(', ');
-        const layout = PM().getBuiltinGroups()[0]?.layoutId || PM().getLayoutId();
+        const layout = PM().getLayoutId();
         const layoutObj =
             window.KeyboardLayouts?.getLayout?.(layout) ||
             window.KeyboardLayouts?.getDefaultLayout?.();
@@ -112,18 +146,14 @@
         </div>`;
     }
 
-    function render(data) {
+    function render() {
         if (state.editingGroup !== null) return renderEditor();
-        const builtins = PM().getBuiltinGroups();
-        let builtinCards = builtins.map(g => renderGroupCard({ ...g, source: 'builtin' }));
-        if (state.weakKeys.length) {
-            const weakGroup = {
-                id: 'builtin-weak-keys',
-                name: 'Weak keys',
-                keys: state.weakKeys.map(([k]) => k),
-                source: 'suggested',
-            };
-            builtinCards = [renderGroupCard(weakGroup), ...builtinCards];
+        rebuildGroupCache();
+        const builtins = [...state.groupCache.values()].filter(g => g.source === 'builtin');
+        const suggested = state.groupCache.get('suggested:builtin-weak-keys');
+        let builtinCards = builtins.map(g => renderGroupCard(g));
+        if (suggested) {
+            builtinCards = [renderGroupCard(suggested), ...builtinCards];
         }
         return `<div class="targeted-practice">
             <section class="practice-section">
@@ -132,11 +162,11 @@
             </section>
             <section class="practice-section">
                 <h4>Built-in groups</h4>
-                <div class="practice-group-grid">${builtinCards.join('')}</div>
+                <div class="practice-group-grid" id="practice-builtin-grid">${builtinCards.join('')}</div>
             </section>
             <section class="practice-section">
                 <h4>Custom groups <button type="button" class="practice-link-btn" id="practice-new-group">+ New group</button></h4>
-                <div class="practice-group-grid custom-groups">${renderCustomSection()}</div>
+                <div class="practice-group-grid custom-groups" id="practice-custom-grid">${renderCustomSection()}</div>
             </section>
             <section class="practice-section">
                 <h4>Exercise</h4>
@@ -154,29 +184,40 @@
                 ${renderPreview()}
             </section>
             <div class="practice-modal-actions">
-                <button type="button" id="practice-start" ${state.selectedGroup ? '' : 'disabled'}>Start practice</button>
+                <button type="button" id="practice-start"${state.selectedGroup ? '' : ' disabled'}>Start practice</button>
             </div>
         </div>`;
     }
 
     function selectGroup(group) {
-        state.selectedGroup = group;
-        state.previewSeed++;
-    }
-
-    function resolveGroup(id, source) {
-        if (source === 'custom') {
-            const g = state.customGroups.find(x => x.id === id);
-            return g ? { id: g.id, name: g.name, keys: g.keys, source: 'custom' } : null;
+        if (!group?.keys?.length) {
+            log('selectGroup rejected: no keys', group);
+            return;
         }
-        return window.BuiltinPracticeGroups?.getBuiltinGroup?.(id, PM().getLayoutId());
+        state.selectedGroup = {
+            id: group.id,
+            name: group.name,
+            keys: [...group.keys],
+            source: group.source,
+        };
+        state.previewSeed++;
+        log('selectGroup', state.selectedGroup.id, state.selectedGroup.keys.length);
     }
 
-    function bind(data, container) {
-        const rerender = () => {
-            window.ModalManager.show('targeted-practice', data);
-        };
+    function paint(container) {
+        if (!container) return;
+        container.innerHTML = render();
+        bindHandlers(container);
+    }
 
+    function rerender() {
+        const container = document.getElementById('modal-content');
+        const overlay = document.getElementById('modal-overlay');
+        if (!container || overlay?.classList.contains('modal-hidden')) return;
+        paint(container);
+    }
+
+    function bindHandlers(container) {
         if (state.editingGroup !== null) {
             container.querySelectorAll('.key-pick-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -214,25 +255,23 @@
         }
 
         container.querySelector('#practice-weak-start')?.addEventListener('click', () => {
-            const keys = state.weakKeys.map(([k]) => k);
-            if (!keys.length) return;
-            selectGroup({
-                id: 'suggested-weak-keys',
-                name: 'Weak keys',
-                keys,
-                source: 'suggested',
-            });
-            PM().startTargeted(state.selectedGroup, {
+            const group = state.groupCache.get('suggested:builtin-weak-keys');
+            if (!group?.keys?.length) return;
+            log('weak-start', group.keys);
+            PM().startTargeted(group, {
                 length: state.length,
                 style: state.style,
+                seed: Date.now(),
             });
         });
 
         container.querySelectorAll('.practice-group-card').forEach(card => {
             card.addEventListener('click', e => {
                 if (e.target.closest('.practice-group-edit')) return;
-                const group = resolveGroup(card.dataset.groupId, card.dataset.source);
-                if (group) selectGroup(group);
+                const group = resolveGroupFromCard(card);
+                log('card click', card.dataset.source, card.dataset.groupId, Boolean(group));
+                if (!group) return;
+                selectGroup(group);
                 rerender();
             });
             card.addEventListener('keydown', e => {
@@ -261,7 +300,11 @@
                 if (confirm('Delete this custom group?')) {
                     PM()
                         .deleteCustomGroup(id)
-                        .then(() => refreshData().then(rerender));
+                        .then(async () => {
+                            await refreshData();
+                            if (state.selectedGroup?.id === id) state.selectedGroup = null;
+                            rerender();
+                        });
                 }
             });
         });
@@ -275,10 +318,12 @@
         container.querySelector('#practice-length')?.addEventListener('change', e => {
             state.length = Number(e.target.value) || 300;
             state.previewSeed++;
+            rerender();
         });
         container.querySelector('#practice-style')?.addEventListener('change', e => {
             state.style = e.target.value;
             state.previewSeed++;
+            rerender();
         });
         container.querySelector('#practice-regenerate-preview')?.addEventListener('click', () => {
             state.previewSeed++;
@@ -286,7 +331,11 @@
         });
 
         container.querySelector('#practice-start')?.addEventListener('click', () => {
-            if (!state.selectedGroup) return;
+            if (!state.selectedGroup?.keys?.length) {
+                log('start blocked: no selection');
+                return;
+            }
+            log('start practice', state.selectedGroup.id);
             PM().startTargeted(state.selectedGroup, {
                 length: state.length,
                 style: state.style,
@@ -295,17 +344,27 @@
         });
     }
 
+    window.EventBus?.on('modal:closed', () => {
+        state.dataLoaded = false;
+    });
+
     window.ModalManager.registerType('targeted-practice', {
         title: 'Targeted Practice',
-        render,
-        bind(data, container) {
-            bind(data, container);
-            refreshData().then(() => {
-                const overlay = document.getElementById('modal-overlay');
-                if (overlay && !overlay.classList.contains('modal-hidden')) {
-                    window.ModalManager.show('targeted-practice', data);
-                }
-            });
+        render: () => render(),
+        bind(_data, container) {
+            rebuildGroupCache();
+            bindHandlers(container);
+            if (!state.dataLoaded) {
+                state.dataLoaded = true;
+                refreshData()
+                    .then(() => {
+                        const overlay = document.getElementById('modal-overlay');
+                        if (!overlay?.classList.contains('modal-hidden')) {
+                            paint(container);
+                        }
+                    })
+                    .catch(err => console.error('Targeted practice: refresh failed', err));
+            }
         },
     });
 })();

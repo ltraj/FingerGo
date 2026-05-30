@@ -50,4 +50,35 @@ describe('ExerciseGenerator', () => {
         assert.ok(/q/i.test(result.text));
         assert.ok(result.stats.targetCharRatio > 0.1);
     });
+
+    it('home row words use only home row letters', () => {
+        const keys = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';'];
+        const allowed = new Set(keys);
+        const result = ExerciseGenerator.generateExercise({
+            targetKeys: keys,
+            length: 200,
+            style: 'words',
+            seed: 42,
+        });
+        for (const ch of result.text.toLowerCase()) {
+            if (ch >= 'a' && ch <= 'z') {
+                assert.ok(allowed.has(ch), `unexpected letter "${ch}" in "${result.text.slice(0, 40)}..."`);
+            }
+        }
+        assert.ok(result.stats.targetCharRatio >= 0.55);
+    });
+
+    it('numbers style uses only digits', () => {
+        const keys = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+        const result = ExerciseGenerator.generateExercise({
+            targetKeys: keys,
+            length: 120,
+            style: 'words',
+            seed: 7,
+        });
+        for (const ch of result.text) {
+            if (ch === ' ') continue;
+            assert.ok(/[0-9]/.test(ch), `non-digit "${ch}"`);
+        }
+    });
 });

@@ -115,6 +115,7 @@
         });
         updateBanner();
         window.ModalManager?.hide();
+        document.getElementById('text-input')?.focus();
     }
 
     /**
@@ -141,6 +142,7 @@
         });
         updateBanner();
         window.ModalManager?.hide();
+        document.getElementById('text-input')?.focus();
     }
 
     function regenerateTargeted() {

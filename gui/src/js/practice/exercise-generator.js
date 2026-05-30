@@ -36,15 +36,30 @@
 
     /**
      * @param {string[]} targetKeys
-     * @returns {boolean}
      */
-    function wordMatches(word, targetKeys) {
-        const lower = word.toLowerCase();
-        return targetKeys.some(k => {
-            if (k === ' ') return lower.includes(' ');
-            if (k.length !== 1) return false;
-            return lower.includes(k);
-        });
+    function buildAllowedChars(targetKeys) {
+        const letters = [];
+        let allowSpace = false;
+        for (const k of targetKeys || []) {
+            if (k === ' ') {
+                allowSpace = true;
+                continue;
+            }
+            if (k.length === 1) letters.push(k.toLowerCase());
+        }
+        return { letters: [...new Set(letters)], allowSpace };
+    }
+
+    /**
+     * @param {string} word
+     * @param {Set<string>} allowed
+     */
+    function wordUsesOnlyAllowed(word, allowed) {
+        for (const ch of word.toLowerCase()) {
+            if (ch >= 'a' && ch <= 'z' && !allowed.has(ch)) return false;
+            if (ch >= '0' && ch <= '9' && !allowed.has(ch)) return false;
+        }
+        return true;
     }
 
     /**
@@ -65,8 +80,9 @@
      * @param {() => number} rng
      */
     function buildEmphasisChunk(targetKeys, rng) {
-        const key = pick(rng, targetKeys.filter(k => k !== 'Enter' && k !== 'Tab'));
-        if (!key || key === ' ') return '   ';
+        const pool = targetKeys.filter(k => k && k !== 'Enter' && k !== 'Tab' && k !== ' ');
+        const key = pick(rng, pool.length ? pool : ['a']);
+        if (!key) return '   ';
         if (key.length === 1) {
             const rep = 2 + Math.floor(rng() * 2);
             return `${key.repeat(rep)} `;
@@ -75,32 +91,83 @@
     }
 
     /**
+     * Build pseudo-words using only allowed characters.
+     * @param {{ letters: string[] }} allowed
+     * @param {() => number} rng
+     */
+    function randomChunk(allowed, rng) {
+        if (!allowed.letters.length) return '';
+        const len = 3 + Math.floor(rng() * 4);
+        let s = '';
+        for (let i = 0; i < len; i++) s += pick(rng, allowed.letters);
+        return s;
+    }
+
+    /**
+     * Words built only from the target key set (home row, numbers, etc.).
+     */
+    function generateConstrainedWords(options, rng) {
+        const { letters, allowSpace } = buildAllowedChars(options.targetKeys);
+        const allowedSet = new Set(letters);
+        const dict = window.PracticeWordlistEN || [];
+        const exclusive = dict.filter(w => w && wordUsesOnlyAllowed(w, allowedSet));
+        const pool = exclusive.length >= 8 ? exclusive : null;
+        let text = '';
+        const targetLen = options.length || DEFAULT_LENGTH;
+
+        while (text.length < targetLen) {
+            const roll = rng();
+            if (roll < 0.25) {
+                text += `${buildEmphasisChunk(options.targetKeys, rng)}`;
+            } else if (pool && roll < 0.85) {
+                text += `${pick(rng, pool)} `;
+            } else {
+                const chunk = randomChunk({ letters, allowSpace }, rng);
+                if (chunk) text += `${chunk} `;
+            }
+        }
+        return text.trim();
+    }
+
+    /**
      * @param {Object} options
-     * @param {string[]} options.targetKeys
-     * @param {number} [options.length]
-     * @param {string} [options.style] words | random | repeat
-     * @param {number} [options.seed]
+     * @param {() => number} rng
      */
     function generateWords(options, rng) {
+        const { letters } = buildAllowedChars(options.targetKeys);
+        const dict = window.PracticeWordlistEN || [];
+        const allowedSet = new Set(letters);
+
+        // Narrow groups (home row, numbers): only dictionary words using allowed letters.
+        const useConstrained =
+            letters.length > 0 &&
+            (letters.length <= 14 ||
+                dict.filter(w => wordUsesOnlyAllowed(w, allowedSet)).length < 12);
+
+        if (useConstrained) {
+            return generateConstrainedWords(options, rng);
+        }
+
         const targetKeys = options.targetKeys || [];
-        const words = window.PracticeWordlistEN || [];
-        const targetWords = words.filter(w => wordMatches(w, targetKeys));
-        const pool = targetWords.length > 0 ? targetWords : words;
+        const targetWords = dict.filter(w => {
+            const lower = w.toLowerCase();
+            return targetKeys.some(k => {
+                if (k === ' ') return lower.includes(' ');
+                if (k.length !== 1) return false;
+                return lower.includes(k);
+            });
+        });
+        const pool = targetWords.length > 0 ? targetWords : dict;
         const weighted = [];
         pool.forEach(w => {
-            const weight = wordMatches(w, targetKeys) ? 3 : 1;
+            const weight = targetWords.includes(w) ? 3 : 1;
             for (let i = 0; i < weight; i++) weighted.push(w);
         });
-        const filler = words.filter(w => !wordMatches(w, targetKeys));
         let text = '';
         while (text.length < (options.length || DEFAULT_LENGTH)) {
             const roll = rng();
-            if (roll < 0.2) {
+            if (roll < 0.35) {
                 text += buildEmphasisChunk(targetKeys, rng);
-            } else if (roll < 0.9) {
-                text += `${pick(rng, weighted)} `;
-            } else if (filler.length) {
-                text += `${pick(rng, filler)} `;
             } else {
                 text += `${pick(rng, weighted)} `;
             }
@@ -109,13 +176,17 @@
     }
 
     function generateRandom(options, rng) {
-        const keys = (options.targetKeys || []).filter(k => k && k !== 'Enter' && k !== 'Tab');
+        const keys = (options.targetKeys || []).filter(
+            k => k && k !== 'Enter' && k !== 'Tab' && k !== 'CapsLock',
+        );
         const chars = keys.length ? keys : ['a'];
         let text = '';
         while (text.length < (options.length || DEFAULT_LENGTH)) {
             const key = pick(rng, chars);
-            text += key === ' ' ? ' ' : key.length === 1 ? key : `${key} `;
-            if (rng() < 0.14) text += ' ';
+            if (key === ' ') text += ' ';
+            else if (key.length === 1) text += key;
+            else text += `${key} `;
+            if (rng() < 0.12) text += ' ';
         }
         return text.trim();
     }
@@ -159,11 +230,17 @@
         }
 
         let attempts = 0;
-        while (attempts < 3 && targetKeys.length > 0) {
-            const ratio = countTargetChars(text, targetKeys) / Math.max(text.replace(/\s/g, '').length, 1);
-            if (ratio >= 0.25) break;
+        const minRatio = style === 'random' || style === 'repeat' ? 0.85 : 0.55;
+        while (attempts < 4 && targetKeys.length > 0) {
+            const alphaLen = Math.max(text.replace(/\s/g, '').length, 1);
+            const ratio = countTargetChars(text, targetKeys) / alphaLen;
+            if (ratio >= minRatio) break;
             if (style === 'repeat') break;
-            text = style === 'random' ? generateRandom({ ...options, length }, rng) : generateWords({ ...options, length }, rng);
+            if (style === 'random') {
+                text = generateRandom({ ...options, length }, rng);
+            } else {
+                text = generateConstrainedWords({ ...options, length }, rng);
+            }
             if (text.length > length) text = text.slice(0, length).trim();
             attempts++;
         }
@@ -181,6 +258,8 @@
     window.ExerciseGenerator = {
         generateExercise,
         createRng,
+        buildAllowedChars,
+        wordUsesOnlyAllowed,
         MIN_LENGTH,
         MAX_LENGTH,
         DEFAULT_LENGTH,
