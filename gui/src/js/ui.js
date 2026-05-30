@@ -337,6 +337,8 @@
         }
         // Show summary modal
         data.isCompleted = true; // Session completed
+        const practice = window.SessionManager?.getPracticeMeta?.();
+        if (practice) Object.assign(data, practice);
         showModal('session-summary', data);
     });
 

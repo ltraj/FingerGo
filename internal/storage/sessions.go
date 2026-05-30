@@ -133,5 +133,12 @@ func cloneSession(src *domain.TypingSession) domain.TypingSession {
 			out.Mistakes[k] = v
 		}
 	}
+	if src.PracticeSessionMeta != nil {
+		meta := *src.PracticeSessionMeta
+		if len(meta.TargetKeys) > 0 {
+			meta.TargetKeys = append([]string(nil), meta.TargetKeys...)
+		}
+		out.PracticeSessionMeta = &meta
+	}
 	return out
 }

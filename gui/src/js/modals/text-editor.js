@@ -22,9 +22,9 @@
     function render(data) {
         const { mode, text, categories, selectedCategory } = data;
         const isEdit = mode === 'edit' && text;
-        const title = esc(isEdit ? text.title : '');
-        const content = esc(isEdit ? text.content : '');
-        const language = esc(isEdit ? text.language || 'text' : 'text');
+        const title = esc(isEdit ? text.title : text?.title || '');
+        const content = esc(isEdit ? text.content : text?.content || '');
+        const language = esc(isEdit ? text.language || 'text' : text?.language || 'text');
         const categoryId = isEdit ? text.categoryId : selectedCategory || '';
 
         // Find current category name for display

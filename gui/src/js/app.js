@@ -27,6 +27,8 @@
         bind('stats-toggle', () => window.SettingsManager.toggleStatsBar());
         bind('keyboard-toggle', () => window.SettingsManager.toggleKeyboard());
         bind('reset-session', () => window.SessionManager.reset());
+        bind('targeted-practice-btn', () => window.PracticeManager?.openTargetedModal());
+        bind('custom-text-practice-btn', () => window.PracticeManager?.openCustomTextModal());
         bind('strict-mode-toggle', () => window.SettingsManager.toggleStrictMode());
         bind('zoom-in', () => window.SettingsManager.zoomIn());
         bind('zoom-out', () => window.SettingsManager.zoomOut());
@@ -131,6 +133,7 @@
         initialize().then(() => {
             window.ShortcutsManager?.init();
             window.LibraryManager?.init();
+            window.PracticeManager?.init();
             window.SessionManager?.setupTypingStart();
         });
     }
@@ -173,6 +176,7 @@
         Settings: window.SettingsManager,
         Session: window.SessionManager,
         Library: window.LibraryManager,
+        Practice: window.PracticeManager,
         Shortcuts: window.ShortcutsManager,
         Modal: window.ModalManager,
         App: window.App,

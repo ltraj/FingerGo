@@ -11,6 +11,8 @@
     let currentText = null;
     let currentTextMeta = null;
     let startHandlerRef = null;
+    /** @type {{ text: string, meta: object }|null} */
+    let librarySnapshot = null;
 
     /**
      * Set keyboard target to first character of text
@@ -33,6 +35,7 @@
             return null;
         }
         const metrics = window.TypingEngine.getMetrics();
+        const practice = getPracticeMeta();
         return {
             ...session,
             wpm: metrics?.wpm ?? 0,
@@ -41,6 +44,7 @@
             duration: metrics?.time ?? session.duration ?? 0,
             totalErrors: session.totalErrors ?? 0,
             totalKeystrokes: session.totalKeystrokes ?? 0,
+            ...(practice || {}),
         };
     }
 
@@ -91,7 +95,74 @@
      * @param {string} textId
      * @returns {Promise<string|undefined>} Text content or undefined on failure
      */
+    function clearEphemeralState() {
+        librarySnapshot = null;
+    }
+
+    /**
+     * Load ephemeral practice text without changing lastTextId.
+     * @param {string} text
+     * @param {Object} meta
+     */
+    function loadEphemeralText(text, meta) {
+        if (!librarySnapshot && currentText != null) {
+            librarySnapshot = {
+                text: currentText,
+                meta: currentTextMeta ? { ...currentTextMeta } : null,
+            };
+        }
+        window.TypingEngine?.reset();
+        currentText = text;
+        currentTextMeta = meta ? { ...meta } : null;
+        window.UIManager?.renderText(currentText);
+        setInitialTarget(currentText);
+        setupTypingStart();
+    }
+
+    /**
+     * Restore library text after ephemeral practice.
+     */
+    async function restoreLibraryText() {
+        window.TypingEngine?.reset();
+        window.StatsManager?.clearHeatmap();
+        if (librarySnapshot?.text) {
+            currentText = librarySnapshot.text;
+            currentTextMeta = librarySnapshot.meta ? { ...librarySnapshot.meta } : null;
+            librarySnapshot = null;
+            window.UIManager?.renderText(currentText);
+            setInitialTarget(currentText);
+            setupTypingStart();
+            return;
+        }
+        librarySnapshot = null;
+        const settings = await window.SettingsManager?.load?.();
+        if (settings?.lastTextId) {
+            await loadText(settings.lastTextId);
+            return;
+        }
+        await loadDefault();
+    }
+
+    /**
+     * @returns {Object|null}
+     */
+    function getPracticeMeta() {
+        const meta = window.PracticeManager?.getMeta?.();
+        if (meta) return { ...meta };
+        if (currentTextMeta?.practiceMode) {
+            return {
+                practiceMode: currentTextMeta.practiceMode,
+                practiceGroupId: currentTextMeta.practiceGroupId || '',
+                practiceGroupName: currentTextMeta.practiceGroupName || '',
+                targetKeys: currentTextMeta.targetKeys || [],
+            };
+        }
+        return null;
+    }
+
     async function loadText(textId) {
+        window.PracticeManager?.clearState?.();
+        clearEphemeralState();
         if (!window.go?.app?.App?.Text) {
             console.error('Internal layer not available');
             return;
@@ -175,6 +246,9 @@
         window.UIManager?.updateStats(0, 0, 100, 0);
         window.StatsManager?.clearHeatmap();
         window.KeyboardUI?.clearAllErrors();
+        if (window.PracticeManager?.isActive?.() && window.PracticeManager?.regenerateTargeted?.()) {
+            return;
+        }
         // Rerender current text or load default
         if (currentText?.length) {
             window.UIManager?.renderText(currentText);
@@ -210,15 +284,26 @@
      * @returns {{textId: string, textTitle: string, categoryId: string}|null}
      */
     function getTextMeta() {
-        return currentTextMeta ? { ...currentTextMeta } : null;
+        const base = currentTextMeta ? { ...currentTextMeta } : null;
+        const practice = getPracticeMeta();
+        if (!practice) return base;
+        return { ...(base || {}), ...practice };
+    }
+
+    function isEphemeral() {
+        return librarySnapshot !== null || Boolean(currentTextMeta?.practiceMode);
     }
 
     // Export API
     window.SessionManager = {
         loadDefault,
         loadText,
+        loadEphemeralText,
+        restoreLibraryText,
         reset,
         getTextMeta,
+        getPracticeMeta,
+        isEphemeral,
         showStatsModal,
         setupTypingStart,
     };

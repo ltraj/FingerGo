@@ -34,6 +34,7 @@ const (
 	textsIndexFile      = "texts/index.json"
 	fallbackContentFile = "texts/content/dfs-file-finder.txt"
 	sessionsFile        = "sessions.json"
+	practiceGroupsFile  = "practice-groups.json"
 )
 
 // Paths inside the embedded filesystem.
@@ -94,7 +95,15 @@ func (m *Manager) Init() error {
 	if err := m.ensureJSONFile(sessionsFile, nil); err != nil {
 		return err
 	}
+	if err := m.ensurePracticeGroupsFile(); err != nil {
+		return err
+	}
 	return nil
+}
+
+func (m *Manager) ensurePracticeGroupsFile() error {
+	defaultContent := []byte("{\n  \"version\": 1,\n  \"groups\": []\n}\n")
+	return m.ensureJSONFile(practiceGroupsFile, defaultContent)
 }
 
 // join constructs an absolute path by prepending the root directory.

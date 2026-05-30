@@ -13,6 +13,7 @@ https://github.com/AshBuk/FingerGo
         <link rel="stylesheet" href="styles/modals.css" />
         <link rel="stylesheet" href="styles/keyboard.css" />
         <link rel="stylesheet" href="styles/library.css" />
+        <link rel="stylesheet" href="styles/practice.css" />
         <link id="theme-css" rel="stylesheet" href="styles/theme-dark.css" />
     </head>
     <body class="theme-dark">
@@ -114,6 +115,19 @@ https://github.com/AshBuk/FingerGo
                 <line x1="6" x2="2" y1="12" y2="12" />
                 <line x1="12" x2="12" y1="6" y2="2" />
                 <line x1="12" x2="12" y1="22" y2="18" />
+            </symbol>
+            <symbol
+                id="icon-target"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            >
+                <circle cx="12" cy="12" r="10" />
+                <circle cx="12" cy="12" r="6" />
+                <circle cx="12" cy="12" r="2" />
             </symbol>
             <symbol
                 id="icon-circle"
@@ -271,6 +285,28 @@ https://github.com/AshBuk/FingerGo
                     </svg>
                 </button>
                 <button
+                    id="targeted-practice-btn"
+                    class="top-action-button"
+                    aria-label="Targeted practice"
+                    title="Targeted practice (Ctrl+Alt+P)"
+                    type="button"
+                >
+                    <svg width="16" height="16" aria-hidden="true">
+                        <use href="#icon-target" />
+                    </svg>
+                </button>
+                <button
+                    id="custom-text-practice-btn"
+                    class="top-action-button"
+                    aria-label="Custom text practice"
+                    title="Paste custom text to practice"
+                    type="button"
+                >
+                    <svg width="16" height="16" aria-hidden="true">
+                        <use href="#icon-pencil" />
+                    </svg>
+                </button>
+                <button
                     id="reset-session"
                     class="top-action-button"
                     aria-label="Reset session"
@@ -282,6 +318,7 @@ https://github.com/AshBuk/FingerGo
             </div>
             <!-- Text Display Area -->
             <section id="text-area">
+                <div id="practice-banner" hidden aria-live="polite"></div>
                 <div id="text-display"></div>
                 <textarea
                     id="text-input"
@@ -427,9 +464,15 @@ https://github.com/AshBuk/FingerGo
         <script src="js/layouts.js"></script>
         <script src="js/keyboard.js"></script>
         <script src="js/typing.js"></script>
+        <script src="js/practice/wordlist-en.js"></script>
+        <script src="js/practice/builtin-groups.js"></script>
+        <script src="js/practice/exercise-generator.js"></script>
+        <script src="js/practice/practice-manager.js"></script>
         <!-- Modal system: core first, then type-specific renderers -->
         <script src="js/modals/core.js"></script>
         <script src="js/modals/session-summary.js"></script>
+        <script src="js/modals/targeted-practice.js"></script>
+        <script src="js/modals/custom-text-practice.js"></script>
         <script src="js/modals/color-settings.js"></script>
         <script src="js/modals/text-editor.js"></script>
         <script src="js/modals/error.js"></script>

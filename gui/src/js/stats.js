@@ -28,11 +28,16 @@
             if (window.go?.app?.App?.SaveSession) {
                 // Build payload matching SessionPayload struct
                 const textMeta = window.App?.getTextMeta?.() || {};
+                const practice = window.SessionManager?.getPracticeMeta?.() || {};
                 const payload = {
                     text: sessionData.text || '',
                     textId: textMeta.textId || '',
                     textTitle: textMeta.textTitle || '',
                     categoryId: textMeta.categoryId || '',
+                    practiceMode: practice.practiceMode || '',
+                    practiceGroupId: practice.practiceGroupId || '',
+                    practiceGroupName: practice.practiceGroupName || '',
+                    targetKeys: practice.targetKeys || [],
                     mistakes: sessionData.mistakes || {},
                     wpm: sessionData.wpm || 0,
                     cpm: sessionData.cpm || 0,

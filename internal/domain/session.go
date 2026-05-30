@@ -33,6 +33,11 @@ type TypingSession struct {
 	TotalKeystrokes int `json:"totalKeystrokes"`
 	TotalErrors     int `json:"totalErrors"`
 	CharacterCount  int `json:"characterCount"`
+
+	PracticeMode      string   `json:"practiceMode,omitempty"`
+	PracticeGroupID   string   `json:"practiceGroupId,omitempty"`
+	PracticeGroupName string   `json:"practiceGroupName,omitempty"`
+	TargetKeys        []string `json:"targetKeys,omitempty"`
 }
 
 // SessionTextMeta aggregates textual metadata provided by the GUI payload.
@@ -59,6 +64,8 @@ type SessionPayload struct {
 
 	TotalErrors     int `json:"totalErrors"`
 	TotalKeystrokes int `json:"totalKeystrokes"`
+
+	*PracticeSessionMeta
 }
 
 // ToTypingSession converts the payload to a normalized TypingSession.
@@ -99,7 +106,7 @@ func (p *SessionPayload) ToTypingSession(fallback time.Time) TypingSession {
 	accuracy := clamp(p.Accuracy, 0, 100)
 	totalKeystrokes := max(0, p.TotalKeystrokes)
 	totalErrors := clamp(p.TotalErrors, 0, totalKeystrokes)
-	return TypingSession{
+	session := TypingSession{
 		TextID:          strings.TrimSpace(rawTextID),
 		TextTitle:       title,
 		TextPreview:     preview,
@@ -115,6 +122,33 @@ func (p *SessionPayload) ToTypingSession(fallback time.Time) TypingSession {
 		CharacterCount:  charCount,
 		Mistakes:        mistakes,
 	}
+	if p.PracticeSessionMeta != nil {
+		session.PracticeSessionMeta = &PracticeSessionMeta{
+			PracticeMode:      strings.TrimSpace(p.PracticeMode),
+			PracticeGroupID:   strings.TrimSpace(p.PracticeGroupID),
+			PracticeGroupName: strings.TrimSpace(p.PracticeGroupName),
+			TargetKeys:        cloneTargetKeys(p.TargetKeys),
+		}
+	}
+	return session
+}
+
+func cloneTargetKeys(src []string) []string {
+	if len(src) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(src))
+	for _, k := range src {
+		k = strings.TrimSpace(k)
+		if k == "" {
+			continue
+		}
+		out = append(out, k)
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
 
 func fromMillis(ms int64, fallback time.Time) time.Time {

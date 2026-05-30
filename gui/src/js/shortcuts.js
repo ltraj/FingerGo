@@ -67,6 +67,12 @@
                 window.SettingsManager?.toggleZenMode();
                 return;
             }
+            // Ctrl+Alt+P - Targeted practice
+            if (e.key === 'p' && (e.ctrlKey || e.metaKey) && e.altKey) {
+                e.preventDefault();
+                window.PracticeManager?.openTargetedModal();
+                return;
+            }
             // Ctrl+Alt+R - Reset session
             if (e.key === 'r' && (e.ctrlKey || e.metaKey) && e.altKey) {
                 e.preventDefault();

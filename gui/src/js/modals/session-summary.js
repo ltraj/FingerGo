@@ -62,10 +62,23 @@
      * @param {Object} data - Session data
      * @returns {string} HTML content
      */
+    function renderPracticeInfo(data) {
+        const mode = data?.practiceMode;
+        if (!mode) return '';
+        const name = data.practiceGroupName || (mode === 'custom-text' ? 'Custom text' : 'Targeted');
+        const keys = Array.isArray(data.targetKeys) ? data.targetKeys : [];
+        const keysLine =
+            keys.length > 0
+                ? `<p class="practice-summary-keys">Keys: ${keys.map(k => esc(formatKeyLabel(k))).join(', ')}</p>`
+                : '';
+        return `<div class="summary-practice"><h4>Practice: ${esc(name)}</h4><p class="practice-summary-mode">${esc(mode)}</p>${keysLine}</div>`;
+    }
+
     function render(data) {
         if (!data) return '<p>No session data</p>';
         return `
             <div class="session-summary">
+                ${renderPracticeInfo(data)}
                 <div class="summary-stats">
                     <div class="summary-stat">
                         <span class="summary-label">WPM</span>
@@ -91,6 +104,7 @@
                         <h3>Errors: ${data.totalErrors}</h3>
                         <p>Total keystrokes: ${data.totalKeystrokes || 0}</p>
                         ${renderMistakeList(data.mistakes)}
+                        <p><button type="button" id="summary-targeted-practice" class="practice-link-btn">Practice weak keys</button></p>
                     </div>
                 `
                         : ''
@@ -108,9 +122,17 @@
         return data?.isCompleted ? 'Session Complete' : 'Session Paused';
     }
 
+    function bind(_data, container) {
+        container.querySelector('#summary-targeted-practice')?.addEventListener('click', () => {
+            window.ModalManager?.hide();
+            window.PracticeManager?.openTargetedModal();
+        });
+    }
+
     // Register with ModalManager
     window.ModalManager.registerType('session-summary', {
         title: getTitle,
         render,
+        bind,
     });
 })();
