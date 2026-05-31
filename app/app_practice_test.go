@@ -11,31 +11,6 @@ import (
 	domain "github.com/AshBuk/FingerGo/internal/domain"
 )
 
-func TestApp_PracticeGroups(t *testing.T) {
-	app := startApp(t, t.TempDir())
-
-	saved, err := app.SavePracticeGroup(&domain.PracticeGroup{
-		Name:     "Test group",
-		LayoutID: "en-qwerty",
-		Keys:     []string{"q", "w"},
-	})
-	if err != nil {
-		t.Fatalf("SavePracticeGroup: %v", err)
-	}
-
-	groups, err := app.GetPracticeGroups()
-	if err != nil {
-		t.Fatalf("GetPracticeGroups: %v", err)
-	}
-	if len(groups) != 1 {
-		t.Fatalf("got %d groups, want 1", len(groups))
-	}
-
-	if err := app.DeletePracticeGroup(saved.ID); err != nil {
-		t.Fatalf("DeletePracticeGroup: %v", err)
-	}
-}
-
 func TestApp_AggregateKeyMistakes(t *testing.T) {
 	app := startApp(t, t.TempDir())
 

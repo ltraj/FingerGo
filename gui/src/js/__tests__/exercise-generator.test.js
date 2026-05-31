@@ -62,7 +62,10 @@ describe('ExerciseGenerator', () => {
         });
         for (const ch of result.text.toLowerCase()) {
             if (ch >= 'a' && ch <= 'z') {
-                assert.ok(allowed.has(ch), `unexpected letter "${ch}" in "${result.text.slice(0, 40)}..."`);
+                assert.ok(
+                    allowed.has(ch),
+                    `unexpected letter "${ch}" in "${result.text.slice(0, 40)}..."`,
+                );
             }
         }
         assert.ok(result.stats.targetCharRatio >= 0.55);

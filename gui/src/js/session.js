@@ -105,7 +105,7 @@
      * @param {Object} meta
      */
     function loadEphemeralText(text, meta) {
-        if (!librarySnapshot && currentText != null) {
+        if (!librarySnapshot && currentText !== null) {
             librarySnapshot = {
                 text: currentText,
                 meta: currentTextMeta ? { ...currentTextMeta } : null,
@@ -246,7 +246,10 @@
         window.UIManager?.updateStats(0, 0, 100, 0);
         window.StatsManager?.clearHeatmap();
         window.KeyboardUI?.clearAllErrors();
-        if (window.PracticeManager?.isActive?.() && window.PracticeManager?.regenerateTargeted?.()) {
+        if (
+            window.PracticeManager?.isActive?.() &&
+            window.PracticeManager?.regenerateTargeted?.()
+        ) {
             return;
         }
         // Rerender current text or load default

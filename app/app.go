@@ -14,11 +14,10 @@ import (
 )
 
 type App struct {
-	storage       *storage.Manager                 // Manages the application's data storage on disk
-	textsRepo     *storage.TextRepository          // Handles operations related to typing texts
-	sessionsRepo  *storage.SessionRepository       // Manages the persistence of typing session data
-	settingsRepo  *storage.SettingsRepository      // Handles user preferences persistence
-	practiceRepo  *storage.PracticeGroupRepository // Custom targeted-practice groups
+	storage      *storage.Manager            // Manages the application's data storage on disk
+	textsRepo    *storage.TextRepository     // Handles operations related to typing texts
+	sessionsRepo *storage.SessionRepository  // Manages the persistence of typing session data
+	settingsRepo *storage.SettingsRepository // Handles user preferences persistence
 }
 
 func New() *App { return &App{} }
@@ -46,9 +45,6 @@ func (a *App) Startup(ctx context.Context) error {
 	// Settings repository is not critical — app can run with defaults
 	if err := a.ensureSettingsRepository(); err != nil {
 		log.Printf("WARNING: settings repository init failed, using defaults: %v", err)
-	}
-	if err := a.ensurePracticeRepository(); err != nil {
-		log.Printf("WARNING: practice group repository init failed: %v", err)
 	}
 	return nil
 }
@@ -157,30 +153,6 @@ func (a *App) SupportedLanguages() []domain.LanguageInfo {
 	return domain.SupportedLanguages()
 }
 
-// GetPracticeGroups returns persisted custom practice groups.
-func (a *App) GetPracticeGroups() ([]domain.PracticeGroup, error) {
-	if a.practiceRepo == nil {
-		return nil, fmt.Errorf("practice group repository not initialized")
-	}
-	return a.practiceRepo.List()
-}
-
-// SavePracticeGroup creates or updates a custom practice group.
-func (a *App) SavePracticeGroup(group *domain.PracticeGroup) (domain.PracticeGroup, error) {
-	if a.practiceRepo == nil {
-		return domain.PracticeGroup{}, fmt.Errorf("practice group repository not initialized")
-	}
-	return a.practiceRepo.Save(group)
-}
-
-// DeletePracticeGroup removes a custom practice group by ID.
-func (a *App) DeletePracticeGroup(id string) error {
-	if a.practiceRepo == nil {
-		return fmt.Errorf("practice group repository not initialized")
-	}
-	return a.practiceRepo.Delete(id)
-}
-
 // AggregateKeyMistakes returns summed mistake counts from recent sessions.
 func (a *App) AggregateKeyMistakes(limit int) (map[string]int, error) {
 	if a.sessionsRepo == nil {
@@ -234,20 +206,5 @@ func (a *App) ensureSettingsRepository() error {
 		return fmt.Errorf("settings repository: initialization failed: %w", err)
 	}
 	a.settingsRepo = repo
-	return nil
-}
-
-func (a *App) ensurePracticeRepository() error {
-	if a.practiceRepo != nil {
-		return nil
-	}
-	if a.storage == nil {
-		return fmt.Errorf("practice repository: storage manager not initialized")
-	}
-	repo, err := storage.NewPracticeGroupRepository(a.storage)
-	if err != nil {
-		return fmt.Errorf("practice repository: initialization failed: %w", err)
-	}
-	a.practiceRepo = repo
 	return nil
 }

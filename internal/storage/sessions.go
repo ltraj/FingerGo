@@ -125,6 +125,34 @@ func (r *SessionRepository) persist(items []domain.TypingSession) error {
 	return nil
 }
 
+// AggregateKeyMistakes sums mistake counts from the most recent sessions.
+func (r *SessionRepository) AggregateKeyMistakes(limit int) (map[string]int, error) {
+	if err := r.ensureLoaded(); err != nil {
+		return nil, err
+	}
+	if limit <= 0 {
+		limit = 50
+	}
+	total := len(r.sessions)
+	if total == 0 {
+		return map[string]int{}, nil
+	}
+	start := total - limit
+	if start < 0 {
+		start = 0
+	}
+	agg := make(map[string]int)
+	for i := start; i < total; i++ {
+		for key, count := range r.sessions[i].Mistakes {
+			if count <= 0 {
+				continue
+			}
+			agg[key] += count
+		}
+	}
+	return agg, nil
+}
+
 func cloneSession(src *domain.TypingSession) domain.TypingSession {
 	out := *src
 	if len(src.Mistakes) > 0 {

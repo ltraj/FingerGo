@@ -65,7 +65,7 @@
     function renderPracticeInfo(data) {
         const mode = data?.practiceMode;
         if (!mode) return '';
-        const name = data.practiceGroupName || (mode === 'custom-text' ? 'Custom text' : 'Targeted');
+        const name = data.practiceGroupName || 'Targeted';
         const keys = Array.isArray(data.targetKeys) ? data.targetKeys : [];
         const keysLine =
             keys.length > 0

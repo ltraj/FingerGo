@@ -15,7 +15,7 @@
      * @returns {() => number}
      */
     function createRng(seed) {
-        let s = (seed >>> 0) || 1;
+        let s = seed >>> 0 || 1;
         return () => {
             s = (s + 0x6d2b79f5) >>> 0;
             let t = s;

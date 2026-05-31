@@ -3,7 +3,7 @@
 // https://github.com/AshBuk/FingerGo
 
 /**
- * Coordinates targeted and custom-text practice flows.
+ * Coordinates targeted practice (built-in groups and weak-key suggestions).
  */
 (() => {
     const esc = window.AppUtils?.escapeHtml || (s => String(s ?? ''));
@@ -27,8 +27,6 @@
             setBannerVisible(false);
             return;
         }
-        const modeLabel =
-            activeMeta.practiceMode === 'custom-text' ? 'Custom text' : 'Targeted practice';
         const keys =
             activeMeta.targetKeys?.length > 0
                 ? esc(activeMeta.targetKeys.slice(0, 12).join(' ')) +
@@ -36,26 +34,18 @@
                 : '';
         setBannerVisible(
             true,
-            `<span class="practice-banner-label">${esc(modeLabel)}</span>` +
+            `<span class="practice-banner-label">Targeted practice</span>` +
                 `<span class="practice-banner-detail">${esc(activeMeta.practiceGroupName || '')}</span>` +
                 (keys ? `<span class="practice-banner-keys">${keys}</span>` : '') +
                 `<button type="button" id="practice-exit-btn" class="practice-banner-btn">Exit</button>` +
-                (activeMeta.practiceMode === 'targeted'
-                    ? `<button type="button" id="practice-change-btn" class="practice-banner-btn">Change</button>`
-                    : ''),
+                `<button type="button" id="practice-change-btn" class="practice-banner-btn">Change</button>`,
         );
-        document.getElementById('practice-exit-btn')?.addEventListener('click', () => exitPractice());
-        document.getElementById('practice-change-btn')?.addEventListener('click', () => openTargetedModal());
-    }
-
-    async function fetchCustomGroups() {
-        if (!window.go?.app?.App?.GetPracticeGroups) return [];
-        try {
-            return (await window.go.app.App.GetPracticeGroups()) || [];
-        } catch (err) {
-            console.error('GetPracticeGroups failed:', err);
-            return [];
-        }
+        document
+            .getElementById('practice-exit-btn')
+            ?.addEventListener('click', () => exitPractice());
+        document
+            .getElementById('practice-change-btn')
+            ?.addEventListener('click', () => openTargetedModal());
     }
 
     async function fetchWeakKeys(limit = 50) {
@@ -70,14 +60,6 @@
             console.error('AggregateKeyMistakes failed:', err);
             return [];
         }
-    }
-
-    async function saveCustomGroup(group) {
-        return window.go.app.App.SavePracticeGroup(group);
-    }
-
-    async function deleteCustomGroup(id) {
-        return window.go.app.App.DeletePracticeGroup(id);
     }
 
     /**
@@ -118,33 +100,6 @@
         document.getElementById('text-input')?.focus();
     }
 
-    /**
-     * @param {string} text
-     */
-    function startCustomText(text) {
-        const trimmed = (text || '').trim();
-        if (!trimmed) return;
-        lastExerciseOptions = null;
-        const title =
-            trimmed.split('\n')[0].trim().slice(0, 64) || 'Custom text practice';
-        activeMeta = {
-            practiceMode: 'custom-text',
-            practiceGroupId: '',
-            practiceGroupName: title,
-            targetKeys: [],
-            textTitle: title,
-        };
-        window.SessionManager?.loadEphemeralText?.(trimmed, {
-            textId: '',
-            textTitle: title,
-            categoryId: '',
-            ...activeMeta,
-        });
-        updateBanner();
-        window.ModalManager?.hide();
-        document.getElementById('text-input')?.focus();
-    }
-
     function regenerateTargeted() {
         if (!lastExerciseOptions) return false;
         const { group, options } = lastExerciseOptions;
@@ -167,10 +122,6 @@
         window.UIManager?.showModal('targeted-practice', {});
     }
 
-    function openCustomTextModal() {
-        window.UIManager?.showModal('custom-text-practice', {});
-    }
-
     function getMeta() {
         return activeMeta ? { ...activeMeta } : null;
     }
@@ -188,18 +139,13 @@
     window.PracticeManager = {
         init,
         openTargetedModal,
-        openCustomTextModal,
         startTargeted,
-        startCustomText,
         exitPractice,
         clearState,
         regenerateTargeted,
         getMeta,
         isActive,
-        fetchCustomGroups,
         fetchWeakKeys,
-        saveCustomGroup,
-        deleteCustomGroup,
         getBuiltinGroups: () =>
             window.BuiltinPracticeGroups?.getBuiltinGroups?.(getLayoutId()) || [],
         getLayoutId,

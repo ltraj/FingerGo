@@ -40,9 +40,6 @@ func TestApp_Startup(t *testing.T) {
 		if app.settingsRepo == nil {
 			t.Error("settingsRepo not initialized")
 		}
-		if app.practiceRepo == nil {
-			t.Error("practiceRepo not initialized")
-		}
 	})
 
 	t.Run("is idempotent", func(t *testing.T) {

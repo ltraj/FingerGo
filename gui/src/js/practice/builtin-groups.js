@@ -10,7 +10,14 @@
     const NUMBER_KEYS = new Set(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
     const PUNCTUATION_KEYS = new Set([';', "'", ',', '.', '/']);
     const MODIFIER_KEYS = new Set([
-        'Tab', 'CapsLock', 'Shift', 'Control', 'Alt', 'Meta', 'Backspace', 'Enter',
+        'Tab',
+        'CapsLock',
+        'Shift',
+        'Control',
+        'Alt',
+        'Meta',
+        'Backspace',
+        'Enter',
     ]);
 
     function uniqueSorted(keys) {
@@ -43,10 +50,7 @@
         return keysFromFingerMap(
             layout,
             (key, finger) =>
-                (key.length === 1 &&
-                    key >= 'z' &&
-                    key <= 'm' &&
-                    typeof finger === 'string') ||
+                (key.length === 1 && key >= 'z' && key <= 'm' && typeof finger === 'string') ||
                 (PUNCTUATION_KEYS.has(key) && finger?.startsWith?.('right')),
         );
     }
@@ -73,7 +77,11 @@
     }
 
     const BUILTIN_DEFS = [
-        { id: 'builtin-home-row', name: 'Home row', resolve: () => uniqueSorted([...HOME_ROW_KEYS]) },
+        {
+            id: 'builtin-home-row',
+            name: 'Home row',
+            resolve: () => uniqueSorted([...HOME_ROW_KEYS]),
+        },
         {
             id: 'builtin-left-hand',
             name: 'Left hand',

@@ -28,7 +28,6 @@
         bind('keyboard-toggle', () => window.SettingsManager.toggleKeyboard());
         bind('reset-session', () => window.SessionManager.reset());
         bind('targeted-practice-btn', () => window.PracticeManager?.openTargetedModal());
-        bind('custom-text-practice-btn', () => window.PracticeManager?.openCustomTextModal());
         bind('strict-mode-toggle', () => window.SettingsManager.toggleStrictMode());
         bind('zoom-in', () => window.SettingsManager.zoomIn());
         bind('zoom-out', () => window.SettingsManager.zoomOut());
